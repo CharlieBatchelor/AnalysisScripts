@@ -42,14 +42,14 @@ def get_list_of_latencies(td_dts, td_sts, tp_dts, tp_sts):
                 td_systimes.append(td_sts[i])
 
 
-    print("Collected ", len(latencies), " measurements of form TP Insertion -> TD Send-out.")
+    print("Collected ", len(latencies), " latency measurements of form TP Insertion -> TD Send-out.")
     return latencies, td_systimes
 
 
 def get_latencies(_file, _output):
 
     # Get a set of inserted TP data from the log file.
-    print("Opening and processing log file...")
+    print("Opening and extracting meaningful info from log file...")
     log_file = open(_file)
     data = log_file.readlines()
     log_file.close()
@@ -84,7 +84,7 @@ def get_latencies(_file, _output):
 
     print("Got a set of ", len(tp_start), " TPs data and ", len(td_lat), " sent TDs data.")
     print("Example tp_lat_start: ", tp_insert[0], " tp_data_t: ", tp_start[0], " TD lat sys: ", td_lat[0], " TD dat: ", td_ts[0])
-    print("Scale of latency should be ", str((td_lat[0] - tp_insert[0]) * 1e-9))
+    print("Scale of latency should be ", str((td_lat[0] - tp_insert[10000]) * 1e-9))
     latencies, td_systime = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
     td_systime = [ td - td_systime[0] for td in td_systime ] # Rescale
     td_systime = [ td*1e-9 for td in td_systime ]  # To seconds from nanoseconds
@@ -99,8 +99,8 @@ if __name__ == "__main__":
     parser.add_argument('-o' '--output', dest='output',   default='', help='Plot output')
 
     args = parser.parse_args()
-    latencies = []
     latencies, td_systimes, run_number = get_latencies(args.file, args.output)
+    print("Finished processing run ", run_number)
 
     # Setup subplots
     title = "Trigger System Latency Measurement - Run No. " + str(run_number)
@@ -118,8 +118,8 @@ if __name__ == "__main__":
 
     title = "Trigger System Latency Measurement - Run No. " + str(run_number)
     fig = plt.subplot(111)
-    fig.set_xlabel("Relative System Time - TD Timestamp (s)", fontweight="bold")
-    fig.set_ylabel("TD Corresponding Latency (s)", fontweight="bold")
+    fig.set_xlabel("Relative System Time (s)", fontweight="bold")
+    fig.set_ylabel(r"TP Inception $\rightarrow$ TD Send-out MLT (s)", fontweight="bold")
     fig.set_title(title, fontweight="bold")
     fig.plot(td_systimes, latencies)
     fig.grid('both')
