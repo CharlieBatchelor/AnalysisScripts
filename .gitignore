@@ -1,3 +1,5 @@
 *.png
 log*
 streamed_tps_event_displays/
+saved_plots/
+logs/
