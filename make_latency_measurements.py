@@ -32,16 +32,18 @@ def get_list_of_latencies(td_dts, td_sts, tp_dts, tp_sts):
     :return: latencies: A list of latency measurements in seconds.
     """
     latencies = []
+    td_systimes = []
 
     for i, td_dt in enumerate(td_dts):
         for j, tp_dt in enumerate(tp_dts):
             if td_dt == tp_dt:
                 latency = (td_sts[i] - tp_sts[j]) * 1e-9
                 latencies.append(latency)
+                td_systimes.append(td_sts[i])
 
 
     print("Collected ", len(latencies), " measurements of form TP Insertion -> TD Send-out.")
-    return latencies
+    return latencies, td_systimes
 
 
 def get_latencies(_file, _output):
@@ -83,8 +85,10 @@ def get_latencies(_file, _output):
     print("Got a set of ", len(tp_start), " TPs data and ", len(td_lat), " sent TDs data.")
     print("Example tp_lat_start: ", tp_insert[0], " tp_data_t: ", tp_start[0], " TD lat sys: ", td_lat[0], " TD dat: ", td_ts[0])
     print("Scale of latency should be ", str((td_lat[0] - tp_insert[0]) * 1e-9))
-    latencies = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
-    return latencies, run_number
+    latencies, td_systime = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
+    td_systime = [ td - td_systime[0] for td in td_systime ] # Rescale
+    td_systime = [ td*1e-9 for td in td_systime ]  # To seconds from nanoseconds
+    return latencies, td_systime, run_number
 
 
 if __name__ == "__main__":
@@ -96,7 +100,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     latencies = []
-    latencies, run_number = get_latencies(args.file, args.output)
+    latencies, td_systimes, run_number = get_latencies(args.file, args.output)
 
     # Setup subplots
     title = "Trigger System Latency Measurement - Run No. " + str(run_number)
@@ -104,10 +108,22 @@ if __name__ == "__main__":
     fig.set_xlabel(r"TP Insertion $\rightarrow$ TD Send-out MLT (seconds)", fontweight="bold")
     fig.set_ylabel("Relative Frequency", fontweight="bold")
     fig.set_title(title, fontweight="bold")
-    fig.hist(latencies, bins=100)
+    fig.hist(latencies, bins=75)
     fig.grid('both')
 
-    fig_name = "tp_to_td_latencies_run_" + str(run_number) + ".png"
+    fig_name = "saved_plots/tp_to_td_latencies_run_" + str(run_number) + ".png"
+    plt.savefig(fig_name)
+    # Clear figure
+    plt.clf()
+
+    title = "Trigger System Latency Measurement - Run No. " + str(run_number)
+    fig = plt.subplot(111)
+    fig.set_xlabel("Relative System Time - TD Timestamp (s)", fontweight="bold")
+    fig.set_ylabel("TD Corresponding Latency (s)", fontweight="bold")
+    fig.set_title(title, fontweight="bold")
+    fig.plot(td_systimes, latencies)
+    fig.grid('both')
+    fig_name = "saved_plots/tp_to_td_latencies_vs_run_time_" + str(run_number) + ".png"
     plt.savefig(fig_name)
 
 
