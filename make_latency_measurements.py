@@ -145,7 +145,7 @@ if __name__ == "__main__":
     fig.set_title(title, fontweight="bold")
     fig.plot(tp_sys[100:], tp_d_v_s[100:])   # Ignore the first few TPs, might be flushing from previous run.
     fig.grid('both')
-    plt.show()
+    # plt.show()
 
     fig_name = "saved_plots/datatime_vs_system_time_TPs_" + str(run_number) + ".png"
     plt.savefig(fig_name)
