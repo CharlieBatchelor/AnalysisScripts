@@ -56,7 +56,6 @@ def get_list_of_latencies(td_dts, td_sts, tp_dts, tp_sts):
 
     print("Collected ", len(latencies), " latency measurements of form TP Insertion -> TD Send-out.")
     print("Collected ", len(tp_d_vs_sys), " measurements of datatime vs system time.")
-    print(tp_d_vs_sys)
     return latencies, td_systimes, tp_d_vs_sys, tp_systemtime
 
 
