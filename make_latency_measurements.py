@@ -41,9 +41,21 @@ def get_list_of_latencies(td_dts, td_sts, tp_dts, tp_sts):
                 latencies.append(latency)
                 td_systimes.append(td_sts[i])
 
+    tp_systemtime = [ tp*1e-9 for tp in tp_sts ]
+    tp_systemtime = [ tp - tp_systemtime[0] for tp in tp_systemtime ]
+    tp_datatime   = [ tp*16e-9 for tp in tp_dts ]
+    tp_datatime   = [ tp - tp_datatime[0] for tp in tp_dts]
+    tp_d_vs_sys = []
+    if len(tp_systemtime) != len(tp_datatime):
+        print("Error! Number of TP datas don't match! ")
+    else:
+        for i in range(len(tp_systemtime)):
+            d = abs(tp_systemtime[i] - tp_datatime[i])
+            tp_d_vs_sys.append(d)
+
 
     print("Collected ", len(latencies), " latency measurements of form TP Insertion -> TD Send-out.")
-    return latencies, td_systimes
+    return latencies, td_systimes, tp_d_vs_sys, tp_systemtime
 
 
 def get_latencies(_file, _output):
@@ -85,10 +97,18 @@ def get_latencies(_file, _output):
     print("Got a set of ", len(tp_start), " TPs data and ", len(td_lat), " sent TDs data.")
     print("Example tp_lat_start: ", tp_insert[0], " tp_data_t: ", tp_start[0], " TD lat sys: ", td_lat[0], " TD dat: ", td_ts[0])
     print("Scale of latency should be ", str((td_lat[0] - tp_insert[10000]) * 1e-9))
-    latencies, td_systime = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
-    td_systime = [ td - td_systime[0] for td in td_systime ] # Rescale
-    td_systime = [ td*1e-9 for td in td_systime ]  # To seconds from nanoseconds
-    return latencies, td_systime, run_number
+    latencies, td_systime, tp_data_vs_sys, tp_systemtime = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
+    # td_systime = [ td - td_systime[0] for td in td_systime ] # Rescale
+    # td_systime = [ td*1e-9 for td in td_systime ]  # To seconds from nanoseconds
+    # tp_datatime = [ tp - tp_start[0] for tp in tp_start ]
+    # tp_datatime = [ tp*16e-9 for tp in tp_datatime ]  # To seconds from 62.5 MHz
+    # tp_systime = [ tp - tp_insert[0] for tp in tp_insert ]
+    # tp_systime = [ tp*1e-9 for tp in tp_systime ] # To seconds from nanoseconds
+    # tp_data_vs_sys = []
+    # for i in range(len(tp_systime)):
+    #     d = tp_systime[i] - tp_datatime[i]
+    #     tp_data_vs_sys.append(d)
+    return latencies, td_systime, tp_data_vs_sys, tp_systemtime, run_number
 
 
 if __name__ == "__main__":
@@ -99,7 +119,7 @@ if __name__ == "__main__":
     parser.add_argument('-o' '--output', dest='output',   default='', help='Plot output')
 
     args = parser.parse_args()
-    latencies, td_systimes, run_number = get_latencies(args.file, args.output)
+    latencies, td_systimes, tp_d_v_s, tp_sys, run_number = get_latencies(args.file, args.output)
     print("Finished processing run ", run_number)
 
     # Setup subplots
@@ -123,8 +143,22 @@ if __name__ == "__main__":
     fig.set_title(title, fontweight="bold")
     fig.plot(td_systimes, latencies)
     fig.grid('both')
+
     fig_name = "saved_plots/tp_to_td_latencies_vs_run_time_" + str(run_number) + ".png"
     plt.savefig(fig_name)
+    plt.clf()
+
+    title = "TP System Time - TP Data Time (At TPChannelFilter Inception)  - Run No. " + str(run_number)
+    fig = plt.subplot(111)
+    fig.set_xlabel("Relative TP System Time (s)", fontweight="bold")
+    fig.set_ylabel("TP System Time - TP Data Time (s)", fontweight="bold")
+    fig.set_title(title, fontweight="bold")
+    fig.plot(tp_sys, tp_d_v_s)
+    fig.grid('both')
+
+    fig_name = "saved_plots/datatime_vs_system_time_TPs_" + str(run_number) + ".png"
+    plt.savefig(fig_name)
+    plt.clf()
 
 
 
