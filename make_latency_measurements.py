@@ -100,6 +100,32 @@ def get_latencies(_file, _output):
     latencies, td_systime, tp_data_vs_sys, tp_systemtime = get_list_of_latencies(td_ts, td_lat, tp_start, tp_insert)
     return latencies, td_systime, tp_data_vs_sys, tp_systemtime, run_number
 
+def measure_tardy_tpset_latencies(_file):
+
+    print("Opening and extracting meaningful info from log file...")
+    log_file = open(_file)
+    data = log_file.readlines()
+    log_file.close()
+    latencies = []
+
+    for line in data:
+        if "Start of run" in line:
+            location = line.find("Start of run")
+            line = (line[location:])
+            run_number = get_value_from_line(line, "Start of run")
+        if "Set start time" in line:
+            location = line.find("Set start time")
+            line = (line[location:])
+            tpset_start = get_value_from_line(line, "Set start time")
+            last_sent_time = get_value_from_line(line, "last sent time")
+            latencies.append(last_sent_time - tpset_start)
+
+    latencies = [l*16e-9 for l in latencies]
+    print("Got list of TPSet latencies.")
+    return latencies, run_number
+
+
+
 
 if __name__ == "__main__":
     import argparse
@@ -109,53 +135,57 @@ if __name__ == "__main__":
     parser.add_argument('-o' '--output', dest='output',   default='', help='Plot output')
 
     args = parser.parse_args()
-    latencies, td_systimes, tp_d_v_s, tp_sys, run_number = get_latencies(args.file, args.output)
-    print("Finished processing run ", run_number)
+    # latencies, td_systimes, tp_d_v_s, tp_sys, run_number = get_latencies(args.file, args.output)
+    # print("Finished processing run ", run_number)
+    #
+    # # Setup subplots
+    # title = "Trigger System Latency Measurement - Run No. " + str(run_number)
+    # fig = plt.subplot(111)
+    # fig.set_xlabel(r"TP Insertion $\rightarrow$ TD Send-out MLT (seconds)", fontweight="bold")
+    # fig.set_ylabel("Relative Frequency", fontweight="bold")
+    # fig.set_title(title, fontweight="bold")
+    # fig.hist(latencies, bins=75)
+    # fig.grid('both')
+    #
+    # fig_name = "saved_plots/tp_to_td_latencies_run_" + str(run_number) + ".png"
+    # plt.savefig(fig_name)
+    # # Clear figure
+    # plt.clf()
+    #
+    # title = "Trigger System Latency Measurement - Run No. " + str(run_number)
+    # fig = plt.subplot(111)
+    # fig.set_xlabel("Relative System Time (s)", fontweight="bold")
+    # fig.set_ylabel(r"TP Inception $\rightarrow$ TD Send-out MLT (s)", fontweight="bold")
+    # fig.set_title(title, fontweight="bold")
+    # fig.plot(td_systimes, latencies)
+    # fig.grid('both')
+    #
+    # fig_name = "saved_plots/tp_to_td_latencies_vs_run_time_" + str(run_number) + ".png"
+    # plt.savefig(fig_name)
+    # plt.clf()
+    #
+    # title = "TP System Time - TP Data Time - Run No. " + str(run_number)
+    # fig = plt.subplot(111)
+    # fig.set_xlabel("Relative TP System Time (s)", fontweight="bold")
+    # fig.set_ylabel("TP System Time - TP Data Time (s)", fontweight="bold")
+    # fig.set_title(title, fontweight="bold")
+    # fig.plot(tp_sys[100:], tp_d_v_s[100:])   # Ignore the first few TPs, might be flushing from previous run.
+    # fig.grid('both')
+    # # plt.show()
+    #
+    # fig_name = "saved_plots/datatime_vs_system_time_TPs_" + str(run_number) + ".png"
+    # plt.savefig(fig_name)
+    # plt.clf()
 
-    # Setup subplots
-    title = "Trigger System Latency Measurement - Run No. " + str(run_number)
+    tpset_lateness, run_number = measure_tardy_tpset_latencies(args.file)
+    title = "TPSet Lateness Distribution - Run No. " + str(run_number)
     fig = plt.subplot(111)
-    fig.set_xlabel(r"TP Insertion $\rightarrow$ TD Send-out MLT (seconds)", fontweight="bold")
-    fig.set_ylabel("Relative Frequency", fontweight="bold")
+    fig.set_xlabel("TPSet Latency - Seconds", fontweight="bold")
+    fig.set_ylabel("Frequency", fontweight="bold")
     fig.set_title(title, fontweight="bold")
-    fig.hist(latencies, bins=75)
+    fig.hist(tpset_lateness[20:], bins=20)   # Ignore the first few TPs, might be flushing from previous run.
     fig.grid('both')
-
-    fig_name = "saved_plots/tp_to_td_latencies_run_" + str(run_number) + ".png"
-    plt.savefig(fig_name)
-    # Clear figure
-    plt.clf()
-
-    title = "Trigger System Latency Measurement - Run No. " + str(run_number)
-    fig = plt.subplot(111)
-    fig.set_xlabel("Relative System Time (s)", fontweight="bold")
-    fig.set_ylabel(r"TP Inception $\rightarrow$ TD Send-out MLT (s)", fontweight="bold")
-    fig.set_title(title, fontweight="bold")
-    fig.plot(td_systimes, latencies)
-    fig.grid('both')
-
-    fig_name = "saved_plots/tp_to_td_latencies_vs_run_time_" + str(run_number) + ".png"
-    plt.savefig(fig_name)
-    plt.clf()
-
-    title = "TP System Time - TP Data Time - Run No. " + str(run_number)
-    fig = plt.subplot(111)
-    fig.set_xlabel("Relative TP System Time (s)", fontweight="bold")
-    fig.set_ylabel("TP System Time - TP Data Time (s)", fontweight="bold")
-    fig.set_title(title, fontweight="bold")
-    fig.plot(tp_sys[100:], tp_d_v_s[100:])   # Ignore the first few TPs, might be flushing from previous run.
-    fig.grid('both')
-    # plt.show()
-
-    fig_name = "saved_plots/datatime_vs_system_time_TPs_" + str(run_number) + ".png"
-    plt.savefig(fig_name)
-    plt.clf()
-
-
-
-
-
-
+    plt.show()
 
 
 
