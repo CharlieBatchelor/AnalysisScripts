@@ -91,7 +91,7 @@ def get_latencies(_file, _output):
             location = line.find("Got TA data request")
             line = (line[location:])
             dr_dt.append(get_value_from_line(line, "datatime starting:"))
-            td_ts.append(get_value_from_line(line, "system time is:"))
+            dr_st.append(get_value_from_line(line, "system time is:"))
 
     print("Got a set of ", len(ta_st), " TAs data and ", len(dr_st), " sent data_request data.")
     latencies, dr_systime, ta_data_vs_sys, ta_systemtime = get_list_of_latencies(dr_dt, dr_st, ta_dt, ta_st)
